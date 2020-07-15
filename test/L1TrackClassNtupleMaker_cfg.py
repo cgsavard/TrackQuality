@@ -145,9 +145,10 @@ else:
     print "ERROR: Unknown L1TRKALGO option"
     exit(1)
 
+# Load MVA processes
 process.load("L1Trigger.TrackQuality.Classifier_cff")
 process.TrackClassifier.L1TrackInputTag = cms.InputTag(L1TRK_NAME, L1TRK_LABEL) 
-process.TrackClassifier.Algorithm = cms.string("NN")
+process.TrackClassifier.Algorithm = cms.string("OXNN")
 
 
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")

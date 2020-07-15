@@ -28,9 +28,10 @@ sess = onnxruntime.InferenceSession(temp_model_file)
 input_name = sess.get_inputs()[0].name
 label_name = sess.get_outputs()[0].name
 
-print(sess.get_inputs()[0].name)
 # This input name is needed in Classifier_cff as  NNIdONNXInputName
+print(sess.get_inputs()[0].name)
 print(label_name)
+# The name of the output is needed in Clasifier_cff as NNIdONNXOutputName
 
 # predict on random input and compare to previous keras model
 for i in range(len(X)):

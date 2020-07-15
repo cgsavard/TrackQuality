@@ -1,3 +1,15 @@
+/*
+ * L1TrackClassifier
+ *
+ * An ED producer taking L1 TTTracks without MVA fields filled
+ * Returning L! TTTracks with MVA fields filled 
+ * 
+ * Uses pretrained ML models to classify tracks
+ *
+ *  Created on: July 15, 2020
+ *      Author: Christopher Brown
+ */
+
 #include <iostream>
 #include <set>
 #include <vector>
@@ -42,19 +54,7 @@ private:
 
   // ----------member data ---------------------------
   string algorithm;
-  float cut_min_pt_;
-  float cut_max_z0_;
-  float cut_max_eta_;
-  float cut_max_chi2_;
-  float cut_max_bendchi_;
-  float cut_min_nstubs_;
- 
-  float trk_pt;
-  float trk_bend_chi2;
-  float trk_z0;
-  float trk_eta;
-  float trk_chi2;
-  int nStubs;
+  
 
   vector<float> TransformedFeatures;
   int n_features;
@@ -62,17 +62,22 @@ private:
   string ONNX_path;
   string TF_path;
 
+  // Default pointers to tensorflow MetaGraph and session
   tensorflow::MetaGraphDef* FakeIDGraph_;
   tensorflow::Session* FakeIDSesh_;
+  // Output of a tensorflow tensor
   vector<tensorflow::Tensor> tfoutput;
 
-  Ort::SessionOptions* session_options;
+
+  Ort::SessionOptions* session_options; //Default session options
+  // FloatArray type defined in https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h
+  // as: std::vector<std::vector<float>> FloatArrays;
   cms::Ort::FloatArrays ortinput;
   vector<string> ortinput_names;
   cms::Ort::FloatArrays ortoutputs;
   vector<string> ortoutput_names;
 
-  float classification;
+  
 
 
   
@@ -89,16 +94,18 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
   algorithm = (string)iConfig.getParameter<string>("Algorithm");
 
   if (algorithm == "Cut") {
-    cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
-    cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
-    cut_max_eta_ = (float)iConfig.getParameter<double>("maxEta");
-    cut_max_chi2_ = (float)iConfig.getParameter<double>("chi2dofMax");
-    cut_max_bendchi_ = (float)iConfig.getParameter<double>("bendchi2Max");
-    cut_min_nstubs_ = (int)iConfig.getParameter<int>("nStubsmin");
+    // Track MET purity cut is included for comparision
+    float cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
+    float cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
+    float cut_max_eta_ = (float)iConfig.getParameter<double>("maxEta");
+    float cut_max_chi2_ = (float)iConfig.getParameter<double>("chi2dofMax");
+    float cut_max_bendchi_ = (float)iConfig.getParameter<double>("bendchi2Max");
+    int cut_min_nstubs_ = (int)iConfig.getParameter<int>("nStubsmin");
             
   }
 
   if (algorithm == "TFNN") {
+    // TensorFlow Neural Net implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
 
@@ -114,15 +121,18 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
   }
 
   if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
+    // ONNX Neural Net and GBDT implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     if (algorithm == "GBDT") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
+      ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
 
     }
     if (algorithm == "OXNN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
+      ortoutput_names.push_back(iConfig.getParameter<string>("NNIdONNXOutputName"));
     }
     cout << "loading fake ID onnx model from " << ONNX_path << std::endl;
   
@@ -131,11 +141,11 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
   produces< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > >( "Level1ClassTTTracks" ).setBranchAlias("Level1ClassTTTracks");
 }
 
+//////////////
+//destructor//
+//////////////
 L1TrackClassifier::~L1TrackClassifier()
 {
- 
-   // do anything here that needs to be done at desctruction time
-   // (e.g. close files, deallocate resources etc.)
 
 }
 
@@ -144,26 +154,29 @@ L1TrackClassifier::~L1TrackClassifier()
 ////////////
 void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
+  //Get TTTracks
   edm::Handle<L1TTTrackCollectionType> L1TTTrackHandle;
   iEvent.getByToken(trackToken, L1TTTrackHandle);
   L1TTTrackCollectionType::const_iterator trackIter;
-
+  
+  // Prepare output TTTracks
   std::unique_ptr< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > L1TkTracksForOutput( new std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > );
 
+  //Iterate through tracks
   for (trackIter = L1TTTrackHandle->begin(); trackIter != L1TTTrackHandle->end(); ++trackIter) {
 
     TTTrack< Ref_Phase2TrackerDigi_ > aTrack = *trackIter;
         
     if (algorithm == "Cut") {
-      trk_pt = aTrack.momentum().perp();
-      trk_bend_chi2 = aTrack.stubPtConsistency();
-      trk_z0 = aTrack.z0();
-      trk_eta = aTrack.momentum().eta();
-      trk_chi2 = aTrack.chi2();
+      float trk_pt = aTrack.momentum().perp();
+      float trk_bend_chi2 = aTrack.stubPtConsistency();
+      float trk_z0 = aTrack.z0();
+      float trk_eta = aTrack.momentum().eta();
+      float trk_chi2 = aTrack.chi2();
       const auto& stubRefs = aTrack.getStubRefs();
-      nStubs = stubRefs.size();
+      int nStubs = stubRefs.size();
 
-      classification = 0.0;
+      float classification = 0.0; // Default classification is 0
 
       if (trk_pt >= cut_min_pt_ && 
         abs(trk_z0) < cut_max_z0_ && 
@@ -171,45 +184,52 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
         trk_chi2 < cut_max_chi2_ && 
         trk_bend_chi2 < cut_max_bendchi_ && 
         nStubs >= cut_min_nstubs_) classification = 1.0;
+        // Classification updated to 1 if conditions are met
 
         aTrack.settrkMVA1(classification);
     }
 
 
     if (algorithm == "TFNN") {
-      TransformedFeatures = FeatureTransform::Transform(aTrack);
-      tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features });
+      TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform features
+      tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
       
       for (int i=0;i<n_features;++i){
+        // fill input tensor with transformed features
         tfinput.tensor<float, 2>()(0, i) = TransformedFeatures[i];
       }    
      
-      
+      //Run session filling tfouput tensor
       tensorflow::run(FakeIDSesh_ , { { tf_input_name, tfinput } }, { tf_output_name }, &tfoutput);
-      // set track classification
 
-
+      // set track classification by accesing the output float of the tfouput tensor
       aTrack.settrkMVA1(tfoutput[0].tensor<float, 2>()(0, 0));
       
 
     }
 
     if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
-      TransformedFeatures = FeatureTransform::Transform(aTrack);
-      cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options);
+      TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
+      cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options); //Setup ONNX runtime
 
+      //ONNX runtime recieves a vector of vectors of floats so push back the input
+      // vector of float to create a 1,1,21 ortinput
       ortinput.push_back(TransformedFeatures);
 
+      // batch_size 1 as only one set of transformed features is being processed
       int batch_size = 1;
-      ortoutputs = Runtime.run(ortinput_names,ortinput,ortoutput_names,batch_size);
+      // Run classification on a batch of 1
+      ortoutputs = Runtime.run(ortinput_names,ortinput,ortoutput_names,batch_size); 
+      // access first value of nested vector
       aTrack.settrkMVA1(ortoutputs[1][0]);
       
-
+      // remove previous transformed feature ready for next track
       ortinput.pop_back();
     
     }
   
     if (algorithm == "None"){
+      // Default no algorithm
       aTrack.settrkMVA1(-999);
     }
         

@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
 //  Analyzer for making mini-ntuple for L1 track performance plots  //
-//                                                                  //
+//  with additional track MVA field                                                                //
 //////////////////////////////////////////////////////////////////////
 
 ////////////////////
@@ -123,8 +123,8 @@ private:
 
   edm::InputTag L1TrackInputTag;        // L1 track collection
   edm::InputTag MCTruthTrackInputTag;
-  edm::InputTag MVATrackInputTag;   // MC truth collection
-  edm::InputTag MCTruthClusterInputTag;
+  edm::InputTag MVATrackInputTag;   // MVA collection
+  edm::InputTag MCTruthClusterInputTag; // MC truth collection
   edm::InputTag L1StubInputTag;
   edm::InputTag MCTruthStubInputTag;
   edm::InputTag TrackingParticleInputTag;
@@ -174,9 +174,9 @@ private:
   std::vector<int>*   m_trk_unknown;
   std::vector<int>*   m_trk_combinatoric;
   std::vector<int>*   m_trk_fake; //0 fake, 1 track from primary interaction, 2 secondary track
-  std::vector<float>* m_trk_MVA1; // Neural Network Output
-  std::vector<float>* m_trk_MVA2; // GBDT Output
-  std::vector<float>* m_trk_MVA3; // TrackMET purity cut
+  std::vector<float>* m_trk_MVA1; // Track Classifier Output
+  std::vector<float>* m_trk_MVA2; // No Output
+  std::vector<float>* m_trk_MVA3; // No Ouput
   std::vector<int>*   m_trk_matchtp_pdgid;
   std::vector<float>* m_trk_matchtp_pt;
   std::vector<float>* m_trk_matchtp_eta;
@@ -758,7 +758,7 @@ void L1TrackClassNtupleMaker::analyze(const edm::Event& iEvent, const edm::Event
   edm::Handle< TTTrackAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTTrackHandle;
   iEvent.getByToken(ttTrackMCTruthToken_, MCTruthTTTrackHandle);
 
-
+  // MVA tracks
   edm::Handle< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > TTTrackMVAHandle;
   iEvent.getByToken(ttTrackMVAToken_, TTTrackMVAHandle);
 
@@ -956,6 +956,8 @@ void L1TrackClassNtupleMaker::analyze(const edm::Event& iEvent, const edm::Event
       cout << endl << "Loop over L1 tracks!" << endl;
       cout << endl << "Looking at " << L1Tk_nPar << "-parameter tracks!" << endl;
     }
+
+    // loop over L1 MAVA tracks
 
      std::vector< TTTrack< Ref_Phase2TrackerDigi_ > >::const_iterator iterMVATrack;
     for ( iterMVATrack = TTTrackMVAHandle->begin(); iterMVATrack != TTTrackMVAHandle->end(); iterMVATrack++ ) {

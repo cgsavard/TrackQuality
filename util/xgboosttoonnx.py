@@ -15,9 +15,9 @@ X = np.array(np.random.rand(10, num_features), dtype=np.float32)
 model = joblib.load("Classifier.pkl")
 print(model.predict(X))
 
-
-initial_type = [('feature_input', FloatTensorType([1, num_features]))]
 # The name of the input is needed in Clasifier_cff as GBDTIdONNXInputName
+initial_type = [('feature_input', FloatTensorType([1, num_features]))]
+
  
 onx = onnxmltools.convert.convert_xgboost(model, initial_types=initial_type)
 
@@ -36,6 +36,7 @@ input_name = sess.get_inputs()[0].name
 label_name = sess.get_outputs()[0].name
 
 print(sess.get_inputs()[0].name)
+# The name of the output is needed in Clasifier_cff as GBDTIdONNXOutputName
 print(label_name)
 
 # predict on random input and compare to previous XGBoost model
