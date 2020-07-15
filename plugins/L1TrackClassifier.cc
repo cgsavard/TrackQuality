@@ -104,7 +104,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
             
   }
 
-  if (algorithm == "TFNN") {
+  else if (algorithm == "TFNN") {
     // TensorFlow Neural Net implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
@@ -120,7 +120,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   }
 
-  if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
+  else if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
     // ONNX Neural Net and GBDT implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     if (algorithm == "GBDT") {
@@ -129,7 +129,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
       ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
 
     }
-    if (algorithm == "OXNN") {
+    else if (algorithm == "OXNN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
       ortoutput_names.push_back(iConfig.getParameter<string>("NNIdONNXOutputName"));
@@ -161,7 +161,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   
   // Prepare output TTTracks
   std::unique_ptr< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > L1TkTracksForOutput( new std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > );
-
+  cout << algorithm << endl;
   //Iterate through tracks
   for (trackIter = L1TTTrackHandle->begin(); trackIter != L1TTTrackHandle->end(); ++trackIter) {
 
@@ -190,7 +190,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
 
-    if (algorithm == "TFNN") {
+    else if (algorithm == "TFNN") {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform features
       tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
       
@@ -204,11 +204,10 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
       // set track classification by accesing the output float of the tfouput tensor
       aTrack.settrkMVA1(tfoutput[0].tensor<float, 2>()(0, 0));
-      
-
+    
     }
 
-    if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
+    else if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options); //Setup ONNX runtime
 
@@ -228,7 +227,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     
     }
   
-    if (algorithm == "None"){
+    else (algorithm == "None"){
       // Default no algorithm
       aTrack.settrkMVA1(-999);
     }
