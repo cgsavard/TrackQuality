@@ -85,13 +85,13 @@ using namespace edm;
 //                          //
 //////////////////////////////
 
-class L1TrackNtupleMaker : public edm::EDAnalyzer
+class L1TrackClassNtupleMaker : public edm::EDAnalyzer
 {
 public:
 
   // Constructor/destructor
-  explicit L1TrackNtupleMaker(const edm::ParameterSet& iConfig);
-  virtual ~L1TrackNtupleMaker();
+  explicit L1TrackClassNtupleMaker(const edm::ParameterSet& iConfig);
+  virtual ~L1TrackClassNtupleMaker();
 
   // Mandatory methods
   virtual void beginJob();
@@ -284,7 +284,7 @@ private:
 
 //////////////
 // CONSTRUCTOR
-L1TrackNtupleMaker::L1TrackNtupleMaker(edm::ParameterSet const& iConfig) :
+L1TrackClassNtupleMaker::L1TrackClassNtupleMaker(edm::ParameterSet const& iConfig) :
   config(iConfig)
 {
 
@@ -327,25 +327,25 @@ L1TrackNtupleMaker::L1TrackNtupleMaker(edm::ParameterSet const& iConfig) :
 
 /////////////
 // DESTRUCTOR
-L1TrackNtupleMaker::~L1TrackNtupleMaker()
+L1TrackClassNtupleMaker::~L1TrackClassNtupleMaker()
 {
 }
 
 //////////
 // END JOB
-void L1TrackNtupleMaker::endJob()
+void L1TrackClassNtupleMaker::endJob()
 {
   // things to be done at the exit of the event Loop
-  cerr << "L1TrackNtupleMaker::endJob" << endl;
+  cerr << "L1TrackClassNtupleMaker::endJob" << endl;
 }
 
 ////////////
 // BEGIN JOB
-void L1TrackNtupleMaker::beginJob()
+void L1TrackClassNtupleMaker::beginJob()
 {
 
   // things to be done before entering the event Loop
-  cerr << "L1TrackNtupleMaker::beginJob" << endl;
+  cerr << "L1TrackClassNtupleMaker::beginJob" << endl;
 
   //-----------------------------------------------------------------------------------------------
   // book histograms / make ntuple
@@ -603,7 +603,7 @@ void L1TrackNtupleMaker::beginJob()
 
 //////////
 // ANALYZE
-void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+void L1TrackClassNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   if (not available_) return; // No ROOT file open.
 
@@ -1690,4 +1690,4 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
 
 ///////////////////////////
 // DEFINE THIS AS A PLUG-IN
-DEFINE_FWK_MODULE(L1TrackNtupleMaker);
+DEFINE_FWK_MODULE(L1TrackClassNtupleMaker);

@@ -14,9 +14,6 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-
-
-
 #include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 #include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
 #include "L1Trigger/TrackFindingTracklet/interface/FeatureTransform.h"
@@ -104,6 +101,10 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
   if (algorithm == "TFNN") {
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
+
+    string tf_input_name = iConfig.getParameter<string>("NNIdGraphInputName");
+    string tf_output_name = iConfig.getParameter<string>("NNIdGraphOutputName");
+
     cout << "loading fake ID NN tensorflow graph from " << TF_path << std::endl;
     // load the graph
     FakeIDGraph_ = tensorflow::loadMetaGraphDef(TF_path,"serve");
@@ -116,11 +117,12 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     n_features = iConfig.getParameter<int>("nfeatures");
     if (algorithm == "GBDT") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
-      ortinput_names.push_back("feature_input");
+      ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
+
     }
     if (algorithm == "OXNN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
-      ortinput_names.push_back("input_1");
+      ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
     }
     cout << "loading fake ID onnx model from " << ONNX_path << std::endl;
   
@@ -181,23 +183,9 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       for (int i=0;i<n_features;++i){
         tfinput.tensor<float, 2>()(0, i) = TransformedFeatures[i];
       }    
-      /*Names of input and output layers are hardcoded, to extract them run:
-        saved_model_cli show --dir [METAGRAPH SAVE DIR] --tag_set serve --signature_def serving_default 
-        With example output: 
-        The given SavedModel SignatureDef contains the following input(s):
-          inputs['input_1'] tensor_info:
-            dtype: DT_FLOAT
-            shape: (-1, 21)
-            name: serving_default_input_1:0
-        The given SavedModel SignatureDef contains the following output(s):
-          outputs['Sigmoid_Output_Layer'] tensor_info:
-            dtype: DT_FLOAT
-            shape: (-1, 1)
-            name: StatefulPartitionedCall:0
-        Method name is: tensorflow/serving/predict
-      */
-
-      tensorflow::run(FakeIDSesh_ , { { "serving_default_input_1", tfinput } }, { "StatefulPartitionedCall" }, &tfoutput);
+     
+      
+      tensorflow::run(FakeIDSesh_ , { { tf_input_name, tfinput } }, { tf_output_name }, &tfoutput);
       // set track classification
 
 

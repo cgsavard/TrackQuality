@@ -1,26 +1,43 @@
+'''
+Helper script that converts a tensorflow 2.0 model saved in the h5 format to the metagraph format
+It will produce a folder of name "FakeIDNNGraph" that contains the metagraph
+'''
+
 import tensorflow as tf
 from keras import backend as K
-
 from tensorflow.keras.models import load_model
-from constraints import ZeroSomeWeights
-from keras.utils.generic_utils import get_custom_objects
 import numpy as np
-get_custom_objects().update({"ZeroSomeWeights": ZeroSomeWeights})
 
-model = load_model('Final_model.h5',custom_objects={'ZeroSomeWeights':ZeroSomeWeights})
-print(model.outputs)
-# [<tf.Tensor 'dense_2/Softmax:0' shape=(?, 10) dtype=float32>]
-print(model.inputs)
-# [<tf.Tensor 'conv2d_1_input:0' shape=(?, 28, 28, 1) dtype=float32>]
-random_input = np.random.rand(1,21)
-print(model.predict(random_input))
 
-model.save("FakeIDnet")
+model = load_model('Final_model.h5')
+num_features = 21
 
-new_model = tf.keras.models.load_model("FakeIDnet")
+random_input = np.random.rand(10,num_features)
+print(model.predict(random_input))  #Used to check pre saving and post saving models
+
+model.save("FakeIDNNGraph")
+
+new_model = tf.keras.models.load_model("FakeIDNNGraph")
 print(new_model.predict(random_input))
 
 # Check its architecture
 new_model.summary()
-print(new_model.outputs)
-print(new_model.inputs)
+
+'''
+ Names of input and output layers are hardcoded, these are needed in Classifier_cff as NNIdGraphInputName and NNIdGraphOutputName
+  to extract them run:
+        saved_model_cli show --dir [METAGRAPH SAVE DIR] --tag_set serve --signature_def serving_default 
+        With example output: 
+        The given SavedModel SignatureDef contains the following input(s):
+          inputs['input_1'] tensor_info:
+            dtype: DT_FLOAT
+            shape: (-1, 21)
+            name: serving_default_input_1:0
+        The given SavedModel SignatureDef contains the following output(s):
+          outputs['Sigmoid_Output_Layer'] tensor_info:
+            dtype: DT_FLOAT
+            shape: (-1, 1)
+            name: StatefulPartitionedCall:0
+        Method name is: tensorflow/serving/predict
+      
+'''
