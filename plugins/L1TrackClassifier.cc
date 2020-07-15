@@ -62,8 +62,8 @@ private:
   vector<float> TransformedFeatures;
   int n_features;
 
-  string GBDT_path;
-  string NN_path;
+  string ONNX_path;
+  string TF_path;
 
   tensorflow::MetaGraphDef* FakeIDGraph_;
   tensorflow::Session* FakeIDSesh_;
@@ -98,36 +98,33 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     cut_max_chi2_ = (float)iConfig.getParameter<double>("chi2dofMax");
     cut_max_bendchi_ = (float)iConfig.getParameter<double>("bendchi2Max");
     cut_min_nstubs_ = (int)iConfig.getParameter<int>("nStubsmin");
-
-    cout << "Track MET purity cut will be Performed" << endl;
             
   }
 
-  if (algorithm == "NN") {
-    cout << "Neural Network Classification will be Performed" << endl;
+  if (algorithm == "TFNN") {
     n_features = iConfig.getParameter<int>("nfeatures");
-    NN_path = iConfig.getParameter<string>("NNIdGraph");
-    cout << "loading fake ID NN tensorflow graph from " << NN_path << std::endl;
+    TF_path = iConfig.getParameter<string>("NNIdGraph");
+    cout << "loading fake ID NN tensorflow graph from " << TF_path << std::endl;
     // load the graph
-    FakeIDGraph_ = tensorflow::loadMetaGraphDef(NN_path,"serve");
+    FakeIDGraph_ = tensorflow::loadMetaGraphDef(TF_path,"serve");
     // create a new session and add the graphDef
-    FakeIDSesh_ = tensorflow::createSession(FakeIDGraph_,NN_path);
+    FakeIDSesh_ = tensorflow::createSession(FakeIDGraph_,TF_path);
 
   }
 
-  if (algorithm == "GBDT"){
-    cout << "GBDT Classification will be Performed" << endl;
+  if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
     n_features = iConfig.getParameter<int>("nfeatures");
-    GBDT_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
-    cout << "loading fake ID GBDT onnx model from " << GBDT_path << std::endl;
-    ortinput_names.push_back("feature_input");
+    if (algorithm == "GBDT") {
+      ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
+      ortinput_names.push_back("feature_input");
+    }
+    if (algorithm == "OXNN") {
+      ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
+      ortinput_names.push_back("input_1");
+    }
+    cout << "loading fake ID onnx model from " << ONNX_path << std::endl;
   
   }
-
-  else if (algorithm == "None"){
-    cout << "No Classification will be Performed" << endl;
-  }
-
 
   produces< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > >( "Level1ClassTTTracks" ).setBranchAlias("Level1ClassTTTracks");
 }
@@ -177,13 +174,29 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
 
-    if (algorithm == "NN") {
+    if (algorithm == "TFNN") {
       TransformedFeatures = FeatureTransform::Transform(aTrack);
       tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features });
       
       for (int i=0;i<n_features;++i){
         tfinput.tensor<float, 2>()(0, i) = TransformedFeatures[i];
       }    
+      /*Names of input and output layers are hardcoded, to extract them run:
+        saved_model_cli show --dir [METAGRAPH SAVE DIR] --tag_set serve --signature_def serving_default 
+        With example output: 
+        The given SavedModel SignatureDef contains the following input(s):
+          inputs['input_1'] tensor_info:
+            dtype: DT_FLOAT
+            shape: (-1, 21)
+            name: serving_default_input_1:0
+        The given SavedModel SignatureDef contains the following output(s):
+          outputs['Sigmoid_Output_Layer'] tensor_info:
+            dtype: DT_FLOAT
+            shape: (-1, 1)
+            name: StatefulPartitionedCall:0
+        Method name is: tensorflow/serving/predict
+      */
+
       tensorflow::run(FakeIDSesh_ , { { "serving_default_input_1", tfinput } }, { "StatefulPartitionedCall" }, &tfoutput);
       // set track classification
 
@@ -193,9 +206,9 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
     }
 
-    if (algorithm == "GBDT") {
+    if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack);
-      cms::Ort::ONNXRuntime Runtime(GBDT_path ,session_options);
+      cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options);
 
       ortinput.push_back(TransformedFeatures);
 
@@ -229,7 +242,7 @@ void L1TrackClassifier::beginJob() {
 }
 
 void L1TrackClassifier::endJob() {
-  if ((algorithm == "NN") | (algorithm == "All")){
+  if (algorithm == "TFNN") {
     //deleta the session
     tensorflow::closeSession(FakeIDSesh_);   
     FakeIDSesh_ = nullptr;
@@ -241,7 +254,7 @@ void L1TrackClassifier::endJob() {
 
   }
 
-  if ((algorithm == "GBDT") | (algorithm == "All")){
+  if ((algorithm == "GBDT") | (algorithm == "OXNN")){
     delete session_options;
     session_options = nullptr;
   }
