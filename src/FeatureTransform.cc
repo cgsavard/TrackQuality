@@ -44,8 +44,10 @@ std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack){
 
 
     float eta = abs(aTrack.eta());
+    int eta_size = static_cast<int>(eta_bins.size());
     // First iterate through eta bins
-    for (int j=0; j<eta_bins.size(); j++)
+
+    for (int j=0; j<eta_size; j++)
         {
           if (eta >= eta_bins[j] && eta < eta_bins[j+1]) // if track in eta bin
           {
