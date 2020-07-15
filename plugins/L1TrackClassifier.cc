@@ -28,7 +28,7 @@
 
 #include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 #include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
-#include "L1Trigger/TrackFindingTracklet/interface/FeatureTransform.h"
+#include "L1Trigger/TrackQuality/interface/FeatureTransform.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
 

@@ -3,7 +3,7 @@ Function to transform TTTrackWord variables into those used by ML models
 Inputs a TTTrack and returns a vector of floats of dimension (1,n_training_features)
 This file is specific to the training of the ML model and should be adapted accordingly
 */
-#include "L1Trigger/TrackFindingTracklet/interface/FeatureTransform.h"
+#include "L1Trigger/TrackQuality/interface/FeatureTransform.h"
 #include <iostream>
 #include <memory>
 
