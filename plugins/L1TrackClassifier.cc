@@ -54,6 +54,20 @@ private:
 
   // ----------member data ---------------------------
   string algorithm;
+
+  float cut_min_pt_;
+  float cut_max_z0_ ;
+  float cut_max_eta_ ;
+  float cut_max_chi2_ ;
+  float cut_max_bendchi_;
+  int cut_min_nstubs_;
+
+  float trk_pt;
+  float trk_bend_chi2;
+  float trk_z0;
+  float trk_eta;
+  float trk_chi2;
+  int nStubs;
   
 
   vector<float> TransformedFeatures;
@@ -67,6 +81,8 @@ private:
   tensorflow::Session* FakeIDSesh_;
   // Output of a tensorflow tensor
   vector<tensorflow::Tensor> tfoutput;
+  string tf_input_name; 
+  string tf_output_name; 
 
 
   Ort::SessionOptions* session_options; //Default session options
@@ -95,12 +111,12 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   if (algorithm == "Cut") {
     // Track MET purity cut is included for comparision
-    float cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
-    float cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
-    float cut_max_eta_ = (float)iConfig.getParameter<double>("maxEta");
-    float cut_max_chi2_ = (float)iConfig.getParameter<double>("chi2dofMax");
-    float cut_max_bendchi_ = (float)iConfig.getParameter<double>("bendchi2Max");
-    int cut_min_nstubs_ = (int)iConfig.getParameter<int>("nStubsmin");
+    cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
+    cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
+    cut_max_eta_ = (float)iConfig.getParameter<double>("maxEta");
+    cut_max_chi2_ = (float)iConfig.getParameter<double>("chi2dofMax");
+    cut_max_bendchi_ = (float)iConfig.getParameter<double>("bendchi2Max");
+    cut_min_nstubs_ = (int)iConfig.getParameter<int>("nStubsmin");
             
   }
 
@@ -109,8 +125,8 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
 
-    string tf_input_name = iConfig.getParameter<string>("NNIdGraphInputName");
-    string tf_output_name = iConfig.getParameter<string>("NNIdGraphOutputName");
+    tf_input_name = iConfig.getParameter<string>("NNIdGraphInputName");
+    tf_output_name = iConfig.getParameter<string>("NNIdGraphOutputName");
 
     cout << "loading fake ID NN tensorflow graph from " << TF_path << std::endl;
     // load the graph
@@ -168,13 +184,13 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     TTTrack< Ref_Phase2TrackerDigi_ > aTrack = *trackIter;
         
     if (algorithm == "Cut") {
-      float trk_pt = aTrack.momentum().perp();
-      float trk_bend_chi2 = aTrack.stubPtConsistency();
-      float trk_z0 = aTrack.z0();
-      float trk_eta = aTrack.momentum().eta();
-      float trk_chi2 = aTrack.chi2();
+      trk_pt = aTrack.momentum().perp();
+      trk_bend_chi2 = aTrack.stubPtConsistency();
+      trk_z0 = aTrack.z0();
+      trk_eta = aTrack.momentum().eta();
+      trk_chi2 = aTrack.chi2();
       const auto& stubRefs = aTrack.getStubRefs();
-      int nStubs = stubRefs.size();
+      nStubs = stubRefs.size();
 
       float classification = 0.0; // Default classification is 0
 
@@ -227,7 +243,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     
     }
   
-    else (algorithm == "None"){
+    else {
       // Default no algorithm
       aTrack.settrkMVA1(-999);
     }

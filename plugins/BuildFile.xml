@@ -1,4 +1,4 @@
-<library   file="*.cc" name="TrackFindingTrackletPlugins">
+<library   file="*.cc" name="TrackQualityPlugins">
   <use   name="L1Trigger/TrackTrigger"/>
   <use   name="L1Trigger/TrackFindingTracklet"/>
   <use   name="SimGeneral/HepPDTRecord"/>
