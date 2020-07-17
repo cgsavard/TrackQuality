@@ -14,7 +14,7 @@ TrackClassifier = cms.EDProducer("L1TrackClassifier",
 
                                   GBDTIdONNXmodel = cms.string("L1Trigger/TrackQuality/data/FakeIDGBDT/GBDT_model.onnx"),
                                   GBDTIdONNXInputName = cms.string("feature_input"),
-                                  GBDTIdONNXOutputName = cms.string("label"),
+                                  GBDTIdONNXOutputName = cms.string("prediction"),
 
                                   maxZ0 = cms.double ( 15. ) ,    # in cm
                                   maxEta = cms.double ( 2.4 ) ,

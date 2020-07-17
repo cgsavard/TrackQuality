@@ -106,6 +106,7 @@ private:
 ///////////////
 L1TrackClassifier::L1TrackClassifier(const edm::ParameterSet& iConfig) :
 trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.getParameter<edm::InputTag>("L1TrackInputTag"))){
+  
 
   algorithm = (string)iConfig.getParameter<string>("Algorithm");
 
@@ -142,7 +143,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     if (algorithm == "GBDT") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
-      ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
+      //ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
 
     }
     else if (algorithm == "OXNN") {
@@ -236,7 +237,20 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       // Run classification on a batch of 1
       ortoutputs = Runtime.run(ortinput_names,ortinput,ortoutput_names,batch_size); 
       // access first value of nested vector
-      aTrack.settrkMVA1(ortoutputs[1][0]);
+      if (algorithm == "OXNN"){
+        aTrack.settrkMVA1(ortoutputs[0][0]);
+      }
+
+      // The ortoutput_names vector for the GBDT is left blank due to issues returning the correct
+      // output, instead the GBDT will fill the ortoutputs with both the class prediciton and the class 
+      // probabilities. 
+      //ortoutputs[0][0] = class prediction based on a 0.5 threshold
+      //ortoutputs[1][0] = negative class probability
+      //ortoutputs[1][1] = positive class probability
+      
+      if (algorithm == "GBDT"){
+        aTrack.settrkMVA1(ortoutputs[1][1]);
+      }
       
       // remove previous transformed feature ready for next track
       ortinput.pop_back();

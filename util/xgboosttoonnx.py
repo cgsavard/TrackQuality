@@ -33,7 +33,9 @@ sess = rt.InferenceSession("GBDT_model.onnx")
 
 # get model metadata to enable mapping of new input to the runtime model.
 input_name = sess.get_inputs()[0].name
-label_name = sess.get_outputs()[0].name
+# This label will access the class probabilities when run in CMSSW, use index 0 for class prediction
+label_name = sess.get_outputs()[1].name
+
 
 print(sess.get_inputs()[0].name)
 # The name of the output is needed in Clasifier_cff as GBDTIdONNXOutputName
@@ -41,5 +43,5 @@ print(label_name)
 
 # predict on random input and compare to previous XGBoost model
 for i in range(len(X)):
-    pred_onx = sess.run([label_name], {input_name: X[i:i+1]})[0]
+    pred_onx = sess.run([], {input_name: X[i:i+1]})[1]
     print(pred_onx)
