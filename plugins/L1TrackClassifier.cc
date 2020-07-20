@@ -110,7 +110,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   algorithm = (string)iConfig.getParameter<string>("Algorithm");
 
-  if (algorithm == "Cut") {
+  if (algorithm == "Cut") | (algorithm == "All")  {
     // Track MET purity cut is included for comparision
     cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
     cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
@@ -121,7 +121,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
             
   }
 
-  else if (algorithm == "TFNN") {
+  else if ((algorithm == "TFNN") | (algorithm == "All") ) {
     // TensorFlow Neural Net implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
@@ -137,10 +137,10 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   }
 
-  else if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
+  else if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
     // ONNX Neural Net and GBDT implementation
     n_features = iConfig.getParameter<int>("nfeatures");
-    if (algorithm == "GBDT") {
+    if ((algorithm == "GBDT") | (algorithm == "All")){
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
       //ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
@@ -184,7 +184,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
     TTTrack< Ref_Phase2TrackerDigi_ > aTrack = *trackIter;
         
-    if (algorithm == "Cut") {
+    if ((algorithm == "Cut") | (algorithm == "All")) {
       trk_pt = aTrack.momentum().perp();
       trk_bend_chi2 = aTrack.stubPtConsistency();
       trk_z0 = aTrack.z0();
@@ -207,7 +207,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
 
-    else if (algorithm == "TFNN") {
+    else if ((algorithm == "TFNN") | (algorithm == "All")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform features
       tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
       
@@ -220,11 +220,15 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       tensorflow::run(FakeIDSesh_ , { { tf_input_name, tfinput } }, { tf_output_name }, &tfoutput);
 
       // set track classification by accesing the output float of the tfouput tensor
-      aTrack.settrkMVA1(tfoutput[0].tensor<float, 2>()(0, 0));
-    
+      if (algorithm == "TFNN"){
+        aTrack.settrkMVA1(tfoutput[0].tensor<float, 2>()(0, 0));
+      }
+      if (algorithm == "All"){
+        aTrack.settrkMVA2(tfoutput[0].tensor<float, 2>()(0, 0));
+      }
     }
 
-    else if ((algorithm == "GBDT") | (algorithm == "OXNN")) {
+    else if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options); //Setup ONNX runtime
 
@@ -251,6 +255,10 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       if (algorithm == "GBDT"){
         aTrack.settrkMVA1(ortoutputs[1][1]);
       }
+
+      if (algorithm == "All"){
+        aTrack.settrkMVA3(ortoutputs[1][1]);
+      }
       
       // remove previous transformed feature ready for next track
       ortinput.pop_back();
@@ -260,6 +268,8 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     else {
       // Default no algorithm
       aTrack.settrkMVA1(-999);
+      aTrack.settrkMVA2(-999);
+      aTrack.settrkMVA3(-999);
     }
         
     aTrack.setTrackWordBits();
@@ -279,7 +289,7 @@ void L1TrackClassifier::beginJob() {
 }
 
 void L1TrackClassifier::endJob() {
-  if (algorithm == "TFNN") {
+  if ((algorithm == "TFNN") | (algorithm == "All")) {
     //deleta the session
     tensorflow::closeSession(FakeIDSesh_);   
     FakeIDSesh_ = nullptr;
@@ -291,7 +301,7 @@ void L1TrackClassifier::endJob() {
 
   }
 
-  if ((algorithm == "GBDT") | (algorithm == "OXNN")){
+  if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")){
     delete session_options;
     session_options = nullptr;
   }

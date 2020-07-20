@@ -12,8 +12,8 @@ from onnxmltools.convert.common.data_types import FloatTensorType
 
 num_features = 21
 X = np.array(np.random.rand(10, num_features), dtype=np.float32)
-model = joblib.load("Classifier.pkl")
-print(model.predict(X))
+model = joblib.load("GBDTClassv1.pkl")
+#print(model.predict(X))
 
 # The name of the input is needed in Clasifier_cff as GBDTIdONNXInputName
 initial_type = [('feature_input', FloatTensorType([1, num_features]))]
