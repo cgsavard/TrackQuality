@@ -110,7 +110,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   algorithm = (string)iConfig.getParameter<string>("Algorithm");
 
-  if (algorithm == "Cut") | (algorithm == "All")  {
+  if ((algorithm == "Cut") | (algorithm == "All") ) {
     // Track MET purity cut is included for comparision
     cut_min_pt_ = (float)iConfig.getParameter<double>("minPt");
     cut_max_z0_ = (float)iConfig.getParameter<double>("maxZ0");
@@ -121,7 +121,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
             
   }
 
-  else if ((algorithm == "TFNN") | (algorithm == "All") ) {
+  if ((algorithm == "TFNN") | (algorithm == "All") ) {
     // TensorFlow Neural Net implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     TF_path = iConfig.getParameter<string>("NNIdGraph");
@@ -137,7 +137,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   }
 
-  else if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+  if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
     // ONNX Neural Net and GBDT implementation
     n_features = iConfig.getParameter<int>("nfeatures");
     if ((algorithm == "GBDT") | (algorithm == "All")){
@@ -146,7 +146,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
       //ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
 
     }
-    else if (algorithm == "OXNN") {
+    if (algorithm == "OXNN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
       ortoutput_names.push_back(iConfig.getParameter<string>("NNIdONNXOutputName"));
@@ -207,7 +207,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
 
-    else if ((algorithm == "TFNN") | (algorithm == "All")) {
+    if ((algorithm == "TFNN") | (algorithm == "All")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform features
       tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
       
@@ -228,7 +228,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       }
     }
 
-    else if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+    if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options); //Setup ONNX runtime
 
