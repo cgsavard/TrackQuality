@@ -11,5 +11,6 @@
   <use   name="hepmc"/>
   <use   name="root"/>
   <use   name="L1Trigger/TrackFindingTMTT"/>
+  <use   name="L1Trigger/TrackQuality"/>
   <flags   EDM_PLUGIN="1"/>
 </library>
