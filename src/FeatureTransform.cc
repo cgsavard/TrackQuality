@@ -6,13 +6,22 @@ This file is specific to the training of the ML model and should be adapted acco
 #include "L1Trigger/TrackQuality/interface/FeatureTransform.h"
 #include <iostream>
 #include <memory>
-
+#include <map>
+#include <string>
 
 namespace FeatureTransform {
 
 
 std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack){
 
+    // List input features for MVA in proper order below, the features options are 
+    // {"log_chi2","log_chi2rphi","log_chi2rz","log_bendchi2","nstubs","lay1_hits","lay2_hits",
+    // "lay3_hits","lay4_hits","lay5_hits","lay6_hits","disk1_hits","disk2_hits","disk3_hits",
+    // "disk4_hits","disk5_hits","rinv","tanl","z0","dtot","ltot"}
+    std::vector<std::string> in_features{"log_chi2","log_chi2rphi","log_chi2rz","log_bendchi2",
+	"nstubs","lay1_hits","lay2_hits","lay3_hits","lay4_hits","lay5_hits","lay6_hits",
+	"disk1_hits","disk2_hits","disk3_hits","disk4_hits","disk5_hits","rinv","tanl",
+	"z0","dtot","ltot"};
     std::vector<float> transformed_features;
 
     // The following converts the 7 bit hitmask in the TTTrackword to an expected
@@ -85,9 +94,34 @@ std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack){
     float tmp_trk_tanl  = abs(aTrack.tanL());
     float tmp_trk_z0   = abs( aTrack.z0() );
 
+    // fill feature map
+    std::map<std::string,float> feat_map; 
+    feat_map["log_chi2"] = tmp_trk_log_chi2;
+    feat_map["log_chi2rphi"] = tmp_trk_log_chi2rphi;
+    feat_map["log_chi2rz"] = tmp_trk_log_chi2rz;
+    feat_map["log_bendchi2"] = tmp_trk_log_bendchi2;
+    feat_map["nstubs"] = float(tmp_trk_dtot+tmp_trk_ltot);
+    feat_map["lay1_hits"] = float(hitpattern_expanded_binary[0]);
+    feat_map["lay2_hits"] = float(hitpattern_expanded_binary[1]);
+    feat_map["lay3_hits"] = float(hitpattern_expanded_binary[2]);
+    feat_map["lay4_hits"] = float(hitpattern_expanded_binary[3]);
+    feat_map["lay5_hits"] = float(hitpattern_expanded_binary[4]);
+    feat_map["lay6_hits"] = float(hitpattern_expanded_binary[5]);
+    feat_map["disk1_hits"] = float(hitpattern_expanded_binary[6]);
+    feat_map["disk2_hits"] = float(hitpattern_expanded_binary[7]);
+    feat_map["disk3_hits"] = float(hitpattern_expanded_binary[8]);
+    feat_map["disk4_hits"] = float(hitpattern_expanded_binary[9]);
+    feat_map["disk5_hits"] = float(hitpattern_expanded_binary[10]);
+    feat_map["rinv"] = tmp_trk_big_invr;
+    feat_map["tanl"] = tmp_trk_tanl;
+    feat_map["z0"] = tmp_trk_z0;
+    feat_map["dtot"] = tmp_trk_dtot;
+    feat_map["ltot"] = tmp_trk_ltot;
 
     // fill tensor with track params
-    transformed_features.push_back(float(tmp_trk_log_chi2));
+    for (std::string feat : in_features) 
+      transformed_features.push_back(feat_map[feat]);
+    /*transformed_features.push_back(float(tmp_trk_log_chi2));
     transformed_features.push_back(float(tmp_trk_log_chi2rphi));
     transformed_features.push_back(float(tmp_trk_log_chi2rz));
     transformed_features.push_back(float(tmp_trk_log_bendchi2));
@@ -107,7 +141,7 @@ std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack){
     transformed_features.push_back(float(tmp_trk_tanl));
     transformed_features.push_back(float(tmp_trk_z0));
     transformed_features.push_back(float(tmp_trk_dtot));
-    transformed_features.push_back(float(tmp_trk_ltot));
+    transformed_features.push_back(float(tmp_trk_ltot));*/
 
     return transformed_features;
 
