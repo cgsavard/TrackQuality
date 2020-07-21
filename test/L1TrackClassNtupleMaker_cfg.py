@@ -73,9 +73,10 @@ elif GEOMETRY == "D41":
     inputMC = ['/store/mc/PhaseIITDRSpring19DR/TTbar_14TeV_TuneCP5_Pythia8/GEN-SIM-DIGI-RAW/PU200_106X_upgrade2023_realistic_v3_ext1-v3/60000/FFB5D0CA-208F-6040-A9BF-3F5354D0AA59.root']
 
 elif GEOMETRY == "D49":
-    inputMC = getTxtFile('L1Trigger/TrackFindingTMTT/test/MCsamples/1110/RelVal/TTbar/PU200.txt')
+    #inputMC = getTxtFile('L1Trigger/TrackFindingTMTT/test/MCsamples/1110/RelVal/TTbar/PU200.txt')
     #inputMC = getTxtFile('L1Trigger/TrackFindingTMTT/test/MCsamples/1110/RelVal/SingleMuPt2to100/PU0.txt')
     #inputMC = getTxtFile('L1Trigger/TrackFindingTMTT/test/MCsamples/1110/RelVal/SingleElPt2to100/PU0.txt')
+    inputMC = ['/store/relval/CMSSW_11_1_0/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_110X_mcRun4_realistic_v3_2026D49PU200-v1/10000/55A5DB80-84E7-2746-819E-2ECAFB126BD2.root']
 
 else:
     print "this is not a valid geometry!!!"

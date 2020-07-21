@@ -85,7 +85,7 @@ private:
   string tf_output_name; 
 
 
-  Ort::SessionOptions* session_options; //Default session options
+  
   // FloatArray type defined in https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h
   // as: std::vector<std::vector<float>> FloatArrays;
   cms::Ort::FloatArrays ortinput;
@@ -230,7 +230,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
     if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
-      cms::Ort::ONNXRuntime Runtime(ONNX_path ,session_options); //Setup ONNX runtime
+      cms::Ort::ONNXRuntime Runtime(ONNX_path); //Setup ONNX runtime
 
       //ONNX runtime recieves a vector of vectors of floats so push back the input
       // vector of float to create a 1,1,21 ortinput
@@ -265,7 +265,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     
     }
   
-    else {
+    else if ((algorithm == "None")){
       // Default no algorithm
       aTrack.settrkMVA1(-999);
       aTrack.settrkMVA2(-999);
@@ -301,10 +301,6 @@ void L1TrackClassifier::endJob() {
 
   }
 
-  if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")){
-    delete session_options;
-    session_options = nullptr;
-  }
 }
 
 DEFINE_FWK_MODULE(L1TrackClassifier);
