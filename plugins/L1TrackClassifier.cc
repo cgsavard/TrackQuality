@@ -72,6 +72,7 @@ private:
 
   vector<float> TransformedFeatures;
   vector<string> in_features;
+  int n_features;
 
   string ONNX_path;
   string TF_path;
@@ -125,6 +126,10 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     // TensorFlow Neural Net implementation
 
     in_features = iConfig.getParameter<vector<string>>("in_features");
+
+    for (string s : in_features){
+      cout << in_features << endl;
+    }
 
     n_features = in_features.size();
     TF_path = iConfig.getParameter<string>("NNIdGraph");
@@ -238,7 +243,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
     if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
       
-      TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
+      TransformedFeatures = FeatureTransform::Transform(aTrack,in_features); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path); //Setup ONNX runtime
 
       //ONNX runtime recieves a vector of vectors of floats so push back the input
