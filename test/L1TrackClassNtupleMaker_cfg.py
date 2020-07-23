@@ -149,7 +149,7 @@ else:
 # Load MVA processes
 process.load("L1Trigger.TrackQuality.Classifier_cff")
 process.TrackClassifier.L1TrackInputTag = cms.InputTag(L1TRK_NAME, L1TRK_LABEL) 
-process.TrackClassifier.Algorithm = cms.string("OXNN")
+process.TrackClassifier.Algorithm = cms.string("NN")
 
 
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
