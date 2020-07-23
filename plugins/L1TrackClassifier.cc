@@ -71,7 +71,7 @@ private:
   
 
   vector<float> TransformedFeatures;
-  int n_features;
+  vector<string> in_features;
 
   string ONNX_path;
   string TF_path;
@@ -123,7 +123,10 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
   if ((algorithm == "TFNN") | (algorithm == "All") ) {
     // TensorFlow Neural Net implementation
-    n_features = iConfig.getParameter<int>("nfeatures");
+
+    in_features = iConfig.getParameter<vector<string>>("in_features");
+
+    n_features = in_features.size();
     TF_path = iConfig.getParameter<string>("NNIdGraph");
 
     tf_input_name = iConfig.getParameter<string>("NNIdGraphInputName");
@@ -138,8 +141,12 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
   }
 
   if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+
+    in_features = iConfig.getParameter<vector<string>>("in_features");
+
+    n_features = in_features.size();
     // ONNX Neural Net and GBDT implementation
-    n_features = iConfig.getParameter<int>("nfeatures");
+
     if ((algorithm == "GBDT") | (algorithm == "All")){
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
@@ -208,7 +215,8 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
 
     if ((algorithm == "TFNN") | (algorithm == "All")) {
-      TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform features
+      
+      TransformedFeatures = FeatureTransform::Transform(aTrack,in_features); //Transform features
       tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
       
       for (int i=0;i<n_features;++i){
@@ -229,6 +237,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
     if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+      
       TransformedFeatures = FeatureTransform::Transform(aTrack); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path); //Setup ONNX runtime
 

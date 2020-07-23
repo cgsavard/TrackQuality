@@ -12,17 +12,14 @@ This file is specific to the training of the ML model and should be adapted acco
 namespace FeatureTransform {
 
 
-std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack){
+std::vector<float> Transform(TTTrack < Ref_Phase2TrackerDigi_ > aTrack, std::vector<std::string> in_features){
 
     // List input features for MVA in proper order below, the features options are 
     // {"log_chi2","log_chi2rphi","log_chi2rz","log_bendchi2","nstubs","lay1_hits","lay2_hits",
     // "lay3_hits","lay4_hits","lay5_hits","lay6_hits","disk1_hits","disk2_hits","disk3_hits",
     // "disk4_hits","disk5_hits","rinv","tanl","z0","dtot","ltot","chi2","chi2rz","chi2rphi",
     // "bendchi2","pt","eta","nlaymiss_interior"}
-    std::vector<std::string> in_features{"log_chi2","log_chi2rphi","log_chi2rz","log_bendchi2",
-	"nstubs","lay1_hits","lay2_hits","lay3_hits","lay4_hits","lay5_hits","lay6_hits",
-	"disk1_hits","disk2_hits","disk3_hits","disk4_hits","disk5_hits","rinv","tanl",
-	"z0","dtot","ltot"};
+    
     std::vector<float> transformed_features;
 
     // The following converts the 7 bit hitmask in the TTTrackword to an expected
