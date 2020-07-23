@@ -2,11 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 TrackClassifier = cms.EDProducer("L1TrackClassifier",
                                   L1TrackInputTag = cms.InputTag("TTTracksFromTrackletEmulation", "Level1TTTracks"), 
-                                  Algorithm = cms.string("None"), #None, Cut, TFNN, OXNN, GBDT
-
-                                  NNIdGraph = cms.string("L1Trigger/TrackQuality/data/FakeIDNNGraph"),
-                                  NNIdGraphInputName = cms.string("serving_default_input_1"),
-                                  NNIdGraphOutputName = cms.string("StatefulPartitionedCall"),
+                                  Algorithm = cms.string("None"), #None, Cut, NN, GBDT
 
                                   NNIdONNXmodel = cms.string("L1Trigger/TrackQuality/data/FakeIDNN/NN_model.onnx"),
                                   NNIdONNXInputName = cms.string("input_1"),

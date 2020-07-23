@@ -26,7 +26,6 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 #include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
 #include "L1Trigger/TrackQuality/interface/FeatureTransform.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
@@ -77,15 +76,6 @@ private:
   string ONNX_path;
   string TF_path;
 
-  // Default pointers to tensorflow MetaGraph and session
-  tensorflow::MetaGraphDef* FakeIDGraph_;
-  tensorflow::Session* FakeIDSesh_;
-  // Output of a tensorflow tensor
-  vector<tensorflow::Tensor> tfoutput;
-  string tf_input_name; 
-  string tf_output_name; 
-
-
   
   // FloatArray type defined in https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h
   // as: std::vector<std::vector<float>> FloatArrays;
@@ -122,26 +112,8 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
             
   }
 
-  if ((algorithm == "TFNN") | (algorithm == "All") ) {
-    // TensorFlow Neural Net implementation
-
-    in_features = iConfig.getParameter<vector<string>>("in_features");
-
-    n_features = in_features.size();
-    TF_path = iConfig.getParameter<string>("NNIdGraph");
-
-    tf_input_name = iConfig.getParameter<string>("NNIdGraphInputName");
-    tf_output_name = iConfig.getParameter<string>("NNIdGraphOutputName");
-
-    cout << "loading fake ID NN tensorflow graph from " << TF_path << std::endl;
-    // load the graph
-    FakeIDGraph_ = tensorflow::loadMetaGraphDef(TF_path,"serve");
-    // create a new session and add the graphDef
-    FakeIDSesh_ = tensorflow::createSession(FakeIDGraph_,TF_path);
-
-  }
-
-  if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+  
+  if ((algorithm == "GBDT") | (algorithm == "NN") | (algorithm == "All")) {
 
     in_features = iConfig.getParameter<vector<string>>("in_features");
 
@@ -154,7 +126,7 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
       //ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
 
     }
-    if (algorithm == "OXNN") {
+    if (algorithm == "NN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
       ortoutput_names.push_back(iConfig.getParameter<string>("NNIdONNXOutputName"));
@@ -215,29 +187,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     }
 
 
-    if ((algorithm == "TFNN") | (algorithm == "All")) {
-      
-      TransformedFeatures = FeatureTransform::Transform(aTrack,in_features); //Transform features
-      tensorflow::Tensor tfinput(tensorflow::DT_FLOAT, { 1, n_features }); //Prepare input tensor
-      
-      for (int i=0;i<n_features;++i){
-        // fill input tensor with transformed features
-        tfinput.tensor<float, 2>()(0, i) = TransformedFeatures[i];
-      }    
-     
-      //Run session filling tfouput tensor
-      tensorflow::run(FakeIDSesh_ , { { tf_input_name, tfinput } }, { tf_output_name }, &tfoutput);
-
-      // set track classification by accesing the output float of the tfouput tensor
-      if (algorithm == "TFNN"){
-        aTrack.settrkMVA1(tfoutput[0].tensor<float, 2>()(0, 0));
-      }
-      if (algorithm == "All"){
-        aTrack.settrkMVA2(tfoutput[0].tensor<float, 2>()(0, 0));
-      }
-    }
-
-    if ((algorithm == "GBDT") | (algorithm == "OXNN") | (algorithm == "All")) {
+    if ((algorithm == "GBDT") | (algorithm == "NN") | (algorithm == "All")) {
       
       TransformedFeatures = FeatureTransform::Transform(aTrack,in_features); //Transform feautres
       cms::Ort::ONNXRuntime Runtime(ONNX_path); //Setup ONNX runtime
@@ -251,7 +201,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       // Run classification on a batch of 1
       ortoutputs = Runtime.run(ortinput_names,ortinput,ortoutput_names,batch_size); 
       // access first value of nested vector
-      if (algorithm == "OXNN"){
+      if (algorithm == "NN"){
         aTrack.settrkMVA1(ortoutputs[0][0]);
       }
 
@@ -299,17 +249,6 @@ void L1TrackClassifier::beginJob() {
 }
 
 void L1TrackClassifier::endJob() {
-  if ((algorithm == "TFNN") | (algorithm == "All")) {
-    //deleta the session
-    tensorflow::closeSession(FakeIDSesh_);   
-    FakeIDSesh_ = nullptr;
-
-
-    // delete the graph	    
-    delete FakeIDGraph_;	 
-    FakeIDGraph_ = nullptr; 
-
-  }
 
 }
 
