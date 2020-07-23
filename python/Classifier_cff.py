@@ -16,7 +16,7 @@ TrackClassifier = cms.EDProducer("L1TrackClassifier",
                                   GBDTIdONNXInputName = cms.string("feature_input"),
                                   GBDTIdONNXOutputName = cms.string("prediction"),
 
-                                  in_features = cms.vstring(["log_chi2","log_chi2rphi","log_chi2rz","log_bendchi2",
+                                  in_features = cms.vstring(["log_chi2","log_bendchi2","log_chi2rphi","log_chi2rz",
                                                              "nstubs","lay1_hits","lay2_hits","lay3_hits","lay4_hits",
                                                              "lay5_hits","lay6_hits","disk1_hits","disk2_hits",
                                                              "disk3_hits","disk4_hits","disk5_hits","rinv","tanl",

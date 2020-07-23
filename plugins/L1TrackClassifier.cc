@@ -127,10 +127,6 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
 
     in_features = iConfig.getParameter<vector<string>>("in_features");
 
-    for (string s : in_features){
-      cout << in_features << endl;
-    }
-
     n_features = in_features.size();
     TF_path = iConfig.getParameter<string>("NNIdGraph");
 
