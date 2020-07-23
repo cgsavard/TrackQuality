@@ -6,11 +6,9 @@ TrackClassifier = cms.EDProducer("L1TrackClassifier",
 
                                   NNIdONNXmodel = cms.string("L1Trigger/TrackQuality/data/FakeIDNN/NN_model.onnx"),
                                   NNIdONNXInputName = cms.string("input_1"),
-                                  NNIdONNXOutputName = cms.string("Sigmoid_Output_Layer"),
 
                                   GBDTIdONNXmodel = cms.string("L1Trigger/TrackQuality/data/FakeIDGBDT/GBDT_model.onnx"),
                                   GBDTIdONNXInputName = cms.string("feature_input"),
-                                  GBDTIdONNXOutputName = cms.string("prediction"),
 
                                   in_features = cms.vstring(["log_chi2","log_bendchi2","log_chi2rphi","log_chi2rz",
                                                              "nstubs","lay1_hits","lay2_hits","lay3_hits","lay4_hits",

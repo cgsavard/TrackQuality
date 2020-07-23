@@ -32,7 +32,6 @@
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
 
 
-
 using namespace std;
 
 
@@ -123,13 +122,10 @@ trackToken(consumes< std::vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.g
     if ((algorithm == "GBDT") | (algorithm == "All")){
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("GBDTIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXInputName"));
-      //ortoutput_names.push_back(iConfig.getParameter<string>("GBDTIdONNXOutputName"));
-
     }
     if (algorithm == "NN") {
       ONNX_path = edm::FileInPath(iConfig.getParameter<string>("NNIdONNXmodel")).fullPath();
       ortinput_names.push_back(iConfig.getParameter<string>("NNIdONNXInputName"));
-      ortoutput_names.push_back(iConfig.getParameter<string>("NNIdONNXOutputName"));
     }
     cout << "loading fake ID onnx model from " << ONNX_path << std::endl;
   
@@ -199,6 +195,7 @@ void L1TrackClassifier::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
       // batch_size 1 as only one set of transformed features is being processed
       int batch_size = 1;
       // Run classification on a batch of 1
+      ortoutput_names = Runtime.getOutputNames();
       ortoutputs = Runtime.run(ortinput_names,ortinput,ortoutput_names,batch_size); 
       // access first value of nested vector
       if (algorithm == "NN"){
